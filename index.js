@@ -15,6 +15,7 @@ import {
   VOCALOIDS,
   GENRES
 } from "./src/api.js";
+import { searchOnSpotify } from "./src/spotify.js";
 
 /**
  * Abre URL no navegador padrao do sistema
@@ -97,32 +98,64 @@ function formatarMusica(song) {
  * Menu para selecionar e abrir link de uma musica
  */
 async function menuAbrirLink(musicas) {
-  const musicasComLink = musicas.filter((m) => m.url);
+  const opcoes = [
+    {
+      name: chalk.hex("#1DB954")("  Buscar no Spotify"),
+      value: { tipo: "spotify" },
+      description: "Abre busca no Spotify Web/App",
+    },
+  ];
 
-  if (musicasComLink.length === 0) {
-    console.log(chalk.yellow("\n  Nenhuma musica com link disponivel.\n"));
-    return;
-  }
-
-  const opcoes = musicasComLink.map((m, i) => ({
-    name: chalk.hex(COLORS.primary)(`  ${i + 1}. ${m.titulo}`),
-    value: m.url,
-    description: m.produtor,
-  }));
+  musicas.forEach((m, i) => {
+    opcoes.push({
+      name: chalk.hex(COLORS.primary)(`  ${i + 1}. ${m.titulo}`),
+      value: { tipo: "musica", musica: m },
+      description: m.produtor,
+    });
+  });
 
   opcoes.push({
     name: chalk.gray("  Voltar"),
     value: null,
   });
 
-  const url = await select({
+  const escolha = await select({
     message: chalk.hex(COLORS.accent)("Abrir no navegador:"),
     choices: opcoes,
   });
 
-  if (url) {
-    console.log(chalk.hex(COLORS.primary)(`\n  Abrindo ${url}...\n`));
-    openUrl(url);
+  if (!escolha) return;
+
+  if (escolha.tipo === "spotify") {
+    const opcoesMusica = musicas.map((m, i) => ({
+      name: chalk.hex("#1DB954")(`  ${i + 1}. ${m.titulo}`),
+      value: m,
+      description: m.produtor,
+    }));
+
+    opcoesMusica.push({
+      name: chalk.gray("  Cancelar"),
+      value: null,
+    });
+
+    const musicaSelecionada = await select({
+      message: chalk.hex("#1DB954")("Qual musica buscar no Spotify?"),
+      choices: opcoesMusica,
+    });
+
+    if (musicaSelecionada) {
+      const query = `${musicaSelecionada.titulo} ${musicaSelecionada.produtor}`;
+      console.log(chalk.hex("#1DB954")(`\n  Abrindo busca no Spotify...\n`));
+      searchOnSpotify(query);
+    }
+  } else if (escolha.tipo === "musica") {
+    const musica = escolha.musica;
+    if (musica.url) {
+      console.log(chalk.hex(COLORS.primary)(`\n  Abrindo ${musica.url}...\n`));
+      openUrl(musica.url);
+    } else {
+      console.log(chalk.yellow("\n  Esta musica nao tem link disponivel.\n"));
+    }
   }
 }
 

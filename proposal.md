@@ -26,12 +26,13 @@ Uma TUI leve que consome a API publica do VocaDB e apresenta rankings de forma v
 - [x] Abrir link do YouTube/Niconico no navegador
 - [x] Cache local para requests frequentes (TTL 5min)
 - [x] Modo "descoberta" - musicas aleatorias bem avaliadas
+- [x] Buscar musica no Spotify (abre open.spotify.com/search)
 
 ### Futuro (v2.0)
 
 - [ ] Historico de rankings (comparar semanas)
 - [ ] Notificacoes de novas musicas de produtores favoritos
-- [ ] Integracao com Spotify (adicionar a playlist)
+- [ ] Adicionar musicas a playlist do Spotify
 - [ ] Export para markdown/JSON
 
 ---
@@ -130,6 +131,7 @@ vocastats-tui/
 └── src/
     ├── api.js        # Cliente VocaDB (com cache)
     ├── cache.js      # Sistema de cache em memoria (TTL)
+    ├── spotify.js    # Integracao Spotify (OAuth PKCE)
     └── ui.js         # Componentes visuais (header, tabelas)
 ```
 

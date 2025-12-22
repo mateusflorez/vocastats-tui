@@ -4,6 +4,9 @@
   "description": "TUI para acompanhar musicas populares de Vocaloid/Hatsune Miku",
   "main": "index.js",
   "type": "module",
+  "bin": {
+    "vocastats": "./index.js"
+  },
   "scripts": {
     "start": "node index.js"
   },

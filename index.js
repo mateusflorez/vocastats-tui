@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import chalk from "chalk";
 import { select, input } from "@inquirer/prompts";
 import { exec } from "child_process";

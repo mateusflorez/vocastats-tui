@@ -26,52 +26,31 @@ TUI para acompanhar rankings e estatísticas de músicas Vocaloid em tempo real.
 ## Requisitos
 
 - Node.js 18+
-- npm
 
-## Instalação
+## Instalacao
 
-### Opção 1: npm link (desenvolvimento)
+### Via npm (recomendado)
 
 ```bash
-# Clone o repositório
-git clone https://github.com/seu-usuario/vocastats-tui.git
-cd vocastats-tui
-
-# Instale as dependências
-npm install
-
-# Crie o comando global
-npm link
+npm install -g vocastats-tui
 ```
 
-### Opção 2: Instalação manual
+### Via npx (sem instalacao)
 
 ```bash
-# Clone o repositório
-git clone https://github.com/seu-usuario/vocastats-tui.git
-cd vocastats-tui
-
-# Instale as dependências
-npm install
-
-# Crie link simbólico manualmente
-sudo ln -s $(pwd)/index.js /usr/local/bin/vocastats
+npx vocastats-tui
 ```
 
-### Opção 3: Sem sudo (instalação local)
-
-Se preferir não usar sudo, configure o npm para instalar globais no seu home:
+### Atualizacao
 
 ```bash
-# Configure o prefixo do npm
-npm config set prefix ~/.local
+npm update -g vocastats-tui
+```
 
-# Adicione ao PATH (coloque no seu .bashrc ou .zshrc)
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
+### Desenvolvimento
 
-# Clone e instale
-git clone https://github.com/seu-usuario/vocastats-tui.git
+```bash
+git clone https://github.com/mateusflorez/vocastats-tui.git
 cd vocastats-tui
 npm install
 npm link
@@ -103,14 +82,10 @@ vocastats
 └────┴──────────────────────────────┴────────────────────┴───────────────┴────────┘
 ```
 
-## Desinstalação
+## Desinstalacao
 
 ```bash
-# Se instalou com npm link
-sudo npm unlink -g vocastats-tui
-
-# Se instalou manualmente
-sudo rm /usr/local/bin/vocastats
+npm uninstall -g vocastats-tui
 ```
 
 ## Dados

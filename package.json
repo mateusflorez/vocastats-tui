@@ -7,15 +7,34 @@
   "bin": {
     "vocastats": "./index.js"
   },
+  "files": [
+    "index.js",
+    "src/**/*"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mateusflorez/vocastats-tui.git"
+  },
+  "homepage": "https://github.com/mateusflorez/vocastats-tui#readme",
+  "bugs": {
+    "url": "https://github.com/mateusflorez/vocastats-tui/issues"
+  },
+  "author": "Mateus Paz <bomberatox@gmail.com>",
+  "license": "MIT",
   "keywords": [
     "vocaloid",
     "hatsune-miku",
     "tui",
     "cli",
-    "vocadb"
+    "vocadb",
+    "miku",
+    "music"
   ],
   "dependencies": {
     "@inquirer/prompts": "^7.2.1",

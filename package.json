@@ -1,0 +1,23 @@
+{
+  "name": "vocastats-tui",
+  "version": "1.0.0",
+  "description": "TUI para acompanhar musicas populares de Vocaloid/Hatsune Miku",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "vocaloid",
+    "hatsune-miku",
+    "tui",
+    "cli",
+    "vocadb"
+  ],
+  "dependencies": {
+    "@inquirer/prompts": "^7.2.1",
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.5",
+    "ora": "^8.1.0"
+  }
+}

@@ -47,15 +47,6 @@ npx vocastats-tui
 npm update -g vocastats-tui
 ```
 
-### Development
-
-```bash
-git clone https://github.com/mateusflorez/vocastats-tui.git
-cd vocastats-tui
-npm install
-npm link
-```
-
 ## Usage
 
 After installation, run from anywhere:
@@ -72,15 +63,8 @@ vocastats
 
 ## Screenshots
 
-```
-┌────┬──────────────────────────────┬────────────────────┬───────────────┬────────┐
-│ #  │ TITLE                        │ PRODUCER           │ VOCALOID      │ RATING │
-├────┼──────────────────────────────┼────────────────────┼───────────────┼────────┤
-│ 1  │ Hibana                       │ DECO*27            │ Hatsune Miku  │ 1234   │
-│ 2  │ Charles                      │ Balloon            │ v flower      │ 1100   │
-│ 3  │ Ghost Rule                   │ DECO*27            │ Hatsune Miku  │ 1050   │
-└────┴──────────────────────────────┴────────────────────┴───────────────┴────────┘
-```
+![main-menu-screenshot](screenshots/image.png)
+![top-of-the-week-screenshot](screenshots/image-1.png)
 
 ## Uninstall
 

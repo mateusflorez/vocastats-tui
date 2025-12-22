@@ -15,7 +15,7 @@ import {
   VOCALOIDS,
   GENRES
 } from "./src/api.js";
-import { searchOnSpotify } from "./src/spotify.js";
+import { searchOnSpotify, isSpotifyInstalled } from "./src/spotify.js";
 
 /**
  * Abre URL no navegador padrao do sistema
@@ -98,11 +98,16 @@ function formatarMusica(song) {
  * Menu para selecionar e abrir link de uma musica
  */
 async function menuAbrirLink(musicas) {
+  const spotifyInstalado = isSpotifyInstalled();
+  const spotifyLabel = spotifyInstalado
+    ? "  Buscar no Spotify (app)"
+    : "  Buscar no Spotify (web)";
+
   const opcoes = [
     {
-      name: chalk.hex("#1DB954")("  Buscar no Spotify"),
+      name: chalk.hex("#1DB954")(spotifyLabel),
       value: { tipo: "spotify" },
-      description: "Abre busca no Spotify Web/App",
+      description: spotifyInstalado ? "Abre direto no app" : "Abre no navegador",
     },
   ];
 
@@ -145,8 +150,12 @@ async function menuAbrirLink(musicas) {
 
     if (musicaSelecionada) {
       const query = `${musicaSelecionada.titulo} ${musicaSelecionada.produtor}`;
-      console.log(chalk.hex("#1DB954")(`\n  Abrindo busca no Spotify...\n`));
-      searchOnSpotify(query);
+      const result = searchOnSpotify(query);
+      if (result.type === "app") {
+        console.log(chalk.hex("#1DB954")(`\n  Abrindo no Spotify...\n`));
+      } else {
+        console.log(chalk.hex("#1DB954")(`\n  Abrindo no navegador...\n`));
+      }
     }
   } else if (escolha.tipo === "musica") {
     const musica = escolha.musica;

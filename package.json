@@ -1,7 +1,7 @@
 {
   "name": "vocastats-tui",
   "version": "1.0.0",
-  "description": "TUI para acompanhar musicas populares de Vocaloid/Hatsune Miku",
+  "description": "TUI for tracking popular Vocaloid/Hatsune Miku songs",
   "main": "index.js",
   "type": "module",
   "bin": {

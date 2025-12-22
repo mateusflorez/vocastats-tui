@@ -1,6 +1,6 @@
 # VocaStats
 
-TUI para acompanhar rankings e estatísticas de músicas Vocaloid em tempo real.
+TUI for tracking Vocaloid song rankings and statistics in real-time.
 
 ```
   ╔══════════════════════════════════════════════════╗
@@ -12,42 +12,42 @@ TUI para acompanhar rankings e estatísticas de músicas Vocaloid em tempo real.
   ╚══════════════════════════════════════════════════╝
 ```
 
-## Funcionalidades
+## Features
 
-- Top músicas da semana
-- Filtro por Vocaloid (Miku, Rin, Len, Luka, GUMI, etc.)
-- Filtro por gênero (Rock, Pop, EDM, Metal, etc.)
-- Busca por nome de música
-- Busca por produtor
-- Modo descoberta (músicas aleatórias bem avaliadas)
-- Abrir links no YouTube/Niconico
-- Buscar no Spotify (detecta se o app está instalado)
+- Top songs of the week
+- Filter by Vocaloid (Miku, Rin, Len, Luka, GUMI, etc.)
+- Filter by genre (Rock, Pop, EDM, Metal, etc.)
+- Search by song name
+- Search by producer
+- Discovery mode (random highly-rated songs)
+- Open links on YouTube/Niconico
+- Search on Spotify (detects if app is installed)
 
-## Requisitos
+## Requirements
 
 - Node.js 18+
 
-## Instalacao
+## Installation
 
-### Via npm (recomendado)
+### Via npm (recommended)
 
 ```bash
 npm install -g vocastats-tui
 ```
 
-### Via npx (sem instalacao)
+### Via npx (no installation)
 
 ```bash
 npx vocastats-tui
 ```
 
-### Atualizacao
+### Update
 
 ```bash
 npm update -g vocastats-tui
 ```
 
-### Desenvolvimento
+### Development
 
 ```bash
 git clone https://github.com/mateusflorez/vocastats-tui.git
@@ -56,25 +56,25 @@ npm install
 npm link
 ```
 
-## Uso
+## Usage
 
-Após a instalação, execute de qualquer lugar:
+After installation, run from anywhere:
 
 ```bash
 vocastats
 ```
 
-## Navegação
+## Navigation
 
-- Use as setas ↑↓ para navegar nos menus
-- Enter para selecionar
-- Ctrl+C para sair a qualquer momento
+- Use arrow keys ↑↓ to navigate menus
+- Enter to select
+- Ctrl+C to exit at any time
 
 ## Screenshots
 
 ```
 ┌────┬──────────────────────────────┬────────────────────┬───────────────┬────────┐
-│ #  │ TITULO                       │ PRODUTOR           │ VOCALOID      │ RATING │
+│ #  │ TITLE                        │ PRODUCER           │ VOCALOID      │ RATING │
 ├────┼──────────────────────────────┼────────────────────┼───────────────┼────────┤
 │ 1  │ Hibana                       │ DECO*27            │ Hatsune Miku  │ 1234   │
 │ 2  │ Charles                      │ Balloon            │ v flower      │ 1100   │
@@ -82,16 +82,16 @@ vocastats
 └────┴──────────────────────────────┴────────────────────┴───────────────┴────────┘
 ```
 
-## Desinstalacao
+## Uninstall
 
 ```bash
 npm uninstall -g vocastats-tui
 ```
 
-## Dados
+## Data
 
-Os dados são obtidos da API pública do [VocaDB](https://vocadb.net).
+Data is fetched from the public [VocaDB](https://vocadb.net) API.
 
-## Licença
+## License
 
 MIT

@@ -2,7 +2,7 @@ import chalk from "chalk";
 import Table from "cli-table3";
 import ora from "ora";
 
-// Paleta de cores Miku
+// Miku color palette
 const COLORS = {
   primary: "#39C5BB",    // Miku teal
   secondary: "#E12885",  // Magenta accent
@@ -48,7 +48,7 @@ export function exibirHeader() {
   console.log(
     chalk.white.bold("  VocaStats ") +
     chalk.hex(COLORS.primary)("v1.0.0") +
-    chalk.gray("  |  Rankings de Vocaloid em tempo real")
+    chalk.gray("  |  Real-time Vocaloid rankings")
   );
   console.log(chalk.gray("─".repeat(55)));
   console.log();
@@ -66,8 +66,8 @@ export function criarTabelaMusicas(musicas) {
   const table = new Table({
     head: [
       chalk.hex(COLORS.accent).bold("#"),
-      chalk.hex(COLORS.accent).bold("TITULO"),
-      chalk.hex(COLORS.accent).bold("PRODUTOR"),
+      chalk.hex(COLORS.accent).bold("TITLE"),
+      chalk.hex(COLORS.accent).bold("PRODUCER"),
       chalk.hex(COLORS.accent).bold("VOCALOID"),
       chalk.hex(COLORS.accent).bold("RATING"),
     ],

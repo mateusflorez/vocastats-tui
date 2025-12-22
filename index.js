@@ -97,7 +97,31 @@ function formatarMusica(song) {
 }
 
 /**
+ * Menu pos-acao: escolher para onde navegar apos abrir link
+ * @returns {'menu-anterior' | 'inicio'}
+ */
+async function menuPosAcao() {
+  const escolha = await select({
+    message: chalk.gray("O que deseja fazer?"),
+    choices: [
+      {
+        name: chalk.hex(COLORS.secondary)("  Voltar ao menu anterior"),
+        value: "menu-anterior",
+        description: "Continuar navegando na lista",
+      },
+      {
+        name: chalk.hex(COLORS.primary)("  Voltar ao inicio"),
+        value: "inicio",
+        description: "Menu principal",
+      },
+    ],
+  });
+  return escolha;
+}
+
+/**
  * Menu para selecionar e abrir link de uma musica
+ * @returns {'menu-anterior' | 'inicio' | null} - acao de navegacao
  */
 async function menuAbrirLink(musicas) {
   const spotifyInstalado = isSpotifyInstalled();
@@ -131,7 +155,9 @@ async function menuAbrirLink(musicas) {
     choices: opcoes,
   });
 
-  if (!escolha) return;
+  if (!escolha) return null;
+
+  let abriuLink = false;
 
   if (escolha.tipo === "spotify") {
     const opcoesMusica = musicas.map((m, i) => ({
@@ -158,16 +184,24 @@ async function menuAbrirLink(musicas) {
       } else {
         console.log(chalk.hex("#1DB954")(`\n  Abrindo no navegador...\n`));
       }
+      abriuLink = true;
     }
   } else if (escolha.tipo === "musica") {
     const musica = escolha.musica;
     if (musica.url) {
       console.log(chalk.hex(COLORS.primary)(`\n  Abrindo ${musica.url}...\n`));
       openUrl(musica.url);
+      abriuLink = true;
     } else {
       console.log(chalk.yellow("\n  Esta musica nao tem link disponivel.\n"));
     }
   }
+
+  if (abriuLink) {
+    return await menuPosAcao();
+  }
+
+  return null;
 }
 
 async function exibirTopSemana() {
@@ -180,11 +214,14 @@ async function exibirTopSemana() {
 
     const musicas = songs.map(formatarMusica);
 
-    console.log(chalk.hex(COLORS.primary)(`\n  Top ${musicas.length} da semana:\n`));
-    const tabela = criarTabelaMusicas(musicas);
-    console.log(tabela.toString());
+    let navegacao = "menu-anterior";
+    while (navegacao === "menu-anterior") {
+      console.log(chalk.hex(COLORS.primary)(`\n  Top ${musicas.length} da semana:\n`));
+      const tabela = criarTabelaMusicas(musicas);
+      console.log(tabela.toString());
 
-    await menuAbrirLink(musicas);
+      navegacao = await menuAbrirLink(musicas);
+    }
 
   } catch (error) {
     spinner.fail(chalk.red("Erro ao buscar dados"));
@@ -220,11 +257,14 @@ async function menuPorVocaloid() {
 
     const musicas = data.items.map(formatarMusica);
 
-    console.log(chalk.hex(COLORS.primary)(`\n  Encontradas ${musicas.length} musicas:\n`));
-    const tabela = criarTabelaMusicas(musicas);
-    console.log(tabela.toString());
+    let navegacao = "menu-anterior";
+    while (navegacao === "menu-anterior") {
+      console.log(chalk.hex(COLORS.primary)(`\n  Encontradas ${musicas.length} musicas:\n`));
+      const tabela = criarTabelaMusicas(musicas);
+      console.log(tabela.toString());
 
-    await menuAbrirLink(musicas);
+      navegacao = await menuAbrirLink(musicas);
+    }
 
   } catch (error) {
     spinner.fail(chalk.red("Erro ao buscar dados"));
@@ -260,11 +300,14 @@ async function menuPorGenero() {
 
     const musicas = data.items.map(formatarMusica);
 
-    console.log(chalk.hex("#88D498")(`\n  Encontradas ${musicas.length} musicas:\n`));
-    const tabela = criarTabelaMusicas(musicas);
-    console.log(tabela.toString());
+    let navegacao = "menu-anterior";
+    while (navegacao === "menu-anterior") {
+      console.log(chalk.hex("#88D498")(`\n  Encontradas ${musicas.length} musicas:\n`));
+      const tabela = criarTabelaMusicas(musicas);
+      console.log(tabela.toString());
 
-    await menuAbrirLink(musicas);
+      navegacao = await menuAbrirLink(musicas);
+    }
 
   } catch (error) {
     spinner.fail(chalk.red("Erro ao buscar dados"));
@@ -292,11 +335,14 @@ async function buscarMusica() {
 
     const musicas = data.items.map(formatarMusica);
 
-    console.log(chalk.hex(COLORS.accent)(`\n  Encontradas ${musicas.length} musicas:\n`));
-    const tabela = criarTabelaMusicas(musicas);
-    console.log(tabela.toString());
+    let navegacao = "menu-anterior";
+    while (navegacao === "menu-anterior") {
+      console.log(chalk.hex(COLORS.accent)(`\n  Encontradas ${musicas.length} musicas:\n`));
+      const tabela = criarTabelaMusicas(musicas);
+      console.log(tabela.toString());
 
-    await menuAbrirLink(musicas);
+      navegacao = await menuAbrirLink(musicas);
+    }
 
   } catch (error) {
     spinner.fail(chalk.red("Erro ao buscar dados"));
@@ -348,11 +394,14 @@ async function buscarProdutor() {
 
     const musicas = data.items.map(formatarMusica);
 
-    console.log(chalk.hex("#9B59B6")(`\n  Encontradas ${musicas.length} musicas:\n`));
-    const tabela = criarTabelaMusicas(musicas);
-    console.log(tabela.toString());
+    let navegacao = "menu-anterior";
+    while (navegacao === "menu-anterior") {
+      console.log(chalk.hex("#9B59B6")(`\n  Encontradas ${musicas.length} musicas:\n`));
+      const tabela = criarTabelaMusicas(musicas);
+      console.log(tabela.toString());
 
-    await menuAbrirLink(musicas);
+      navegacao = await menuAbrirLink(musicas);
+    }
 
   } catch (error) {
     spinner.fail(chalk.red("Erro ao buscar dados"));
@@ -374,11 +423,14 @@ async function modoDescoberta() {
 
     const musicas = data.items.map(formatarMusica);
 
-    console.log(chalk.hex("#F39C12")(`\n  Descobertas de ${vocaloidName}:\n`));
-    const tabela = criarTabelaMusicas(musicas);
-    console.log(tabela.toString());
+    let navegacao = "menu-anterior";
+    while (navegacao === "menu-anterior") {
+      console.log(chalk.hex("#F39C12")(`\n  Descobertas de ${vocaloidName}:\n`));
+      const tabela = criarTabelaMusicas(musicas);
+      console.log(tabela.toString());
 
-    await menuAbrirLink(musicas);
+      navegacao = await menuAbrirLink(musicas);
+    }
 
   } catch (error) {
     spinner.fail(chalk.red("Erro ao buscar dados"));
@@ -418,32 +470,26 @@ async function main() {
 
         case "top-semana":
           await exibirTopSemana();
-          await pausar();
           break;
 
         case "por-vocaloid":
           await menuPorVocaloid();
-          await pausar();
           break;
 
         case "por-genero":
           await menuPorGenero();
-          await pausar();
           break;
 
         case "buscar-musica":
           await buscarMusica();
-          await pausar();
           break;
 
         case "buscar-produtor":
           await buscarProdutor();
-          await pausar();
           break;
 
         case "descoberta":
           await modoDescoberta();
-          await pausar();
           break;
       }
     } catch (error) {

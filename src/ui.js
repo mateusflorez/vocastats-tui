@@ -1,8 +1,12 @@
 import chalk from "chalk";
 import Table from "cli-table3";
 import ora from "ora";
+import { createRequire } from "module";
 import { themeManager, themed, getThemedColors } from "./themes.js";
 import { navigation } from "./navigation.js";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json");
 
 /**
  * Obtem COLORS do tema atual
@@ -83,7 +87,7 @@ export function exibirHeader(showBreadcrumbs = true) {
   console.log(chalk.gray("─".repeat(55)));
   console.log(
     chalk.white.bold("  VocaStats ") +
-    chalk.hex(colors.primary)("v1.0.0") +
+    chalk.hex(colors.primary)(`v${version}`) +
     chalk.gray("  |  Real-time Vocaloid rankings")
   );
   console.log(chalk.gray("─".repeat(55)));

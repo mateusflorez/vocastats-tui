@@ -1,21 +1,29 @@
 import chalk from "chalk";
 import Table from "cli-table3";
 import ora from "ora";
+import { themeManager, themed, getThemedColors } from "./themes.js";
 
-// Miku color palette
-const COLORS = {
-  primary: "#39C5BB",    // Miku teal
-  secondary: "#E12885",  // Magenta accent
-  accent: "#FFE495",     // Amarelo
-  text: "#FFFFFF",
-  muted: "#666666",
-};
+/**
+ * Obtem COLORS do tema atual
+ * Exportado para compatibilidade com codigo existente
+ */
+export function getCOLORS() {
+  return getThemedColors();
+}
+
+// Alias para compatibilidade - sera atualizado dinamicamente
+export const COLORS = new Proxy({}, {
+  get(target, prop) {
+    return getThemedColors()[prop];
+  }
+});
 
 function criarLogo() {
-  const p = chalk.hex(COLORS.primary);
-  const s = chalk.hex(COLORS.secondary);
-  const a = chalk.hex(COLORS.accent);
-  const g = chalk.hex("#88D498");
+  const colors = getThemedColors();
+  const p = chalk.hex(colors.primary);
+  const s = chalk.hex(colors.secondary);
+  const a = chalk.hex(colors.accent);
+  const m = chalk.hex(colors.muted);
 
   const linhas = [
     "  __     __              ____  _        _       ",
@@ -28,6 +36,9 @@ function criarLogo() {
   const largura = 50;
   const borda = "═".repeat(largura);
 
+  const theme = themeManager.getTheme();
+  const themeName = theme.name;
+
   return `
   ${p("╔" + borda + "╗")}
   ${p("║")}${p(linhas[0].padEnd(largura))}${p("║")}
@@ -37,17 +48,18 @@ function criarLogo() {
   ${p("║")}${a(linhas[4].padEnd(largura))}${p("║")}
   ${p("╚" + borda + "╝")}
 
-         ${p("♪")} ${chalk.gray("Miku")}    ${s("♪")} ${chalk.gray("Rin/Len")}    ${a("♪")} ${chalk.gray("Luka")}    ${g("♪")} ${chalk.gray("GUMI")}
+         ${p("♪")} ${m(themeName)} theme
 `;
 }
 
 export function exibirHeader() {
+  const colors = getThemedColors();
   console.clear();
   console.log(criarLogo());
   console.log(chalk.gray("─".repeat(55)));
   console.log(
     chalk.white.bold("  VocaStats ") +
-    chalk.hex(COLORS.primary)("v1.0.0") +
+    chalk.hex(colors.primary)("v1.0.0") +
     chalk.gray("  |  Real-time Vocaloid rankings")
   );
   console.log(chalk.gray("─".repeat(55)));
@@ -55,21 +67,37 @@ export function exibirHeader() {
 }
 
 export function criarSpinner(texto) {
+  const colors = getThemedColors();
+  // Mapeia cor hex para nome de cor do ora
+  const colorMap = {
+    "#39C5BB": "cyan",
+    "#FFCC00": "yellow",
+    "#FFB7C5": "magenta",
+    "#0066CC": "blue",
+    "#CC0000": "red",
+    "#88D498": "green",
+    "#00FF00": "green",
+    "#FF00FF": "magenta",
+    "#FFFFFF": "white",
+  };
+
   return ora({
     text: texto,
-    color: "cyan",
+    color: colorMap[colors.primary] || "cyan",
     spinner: "dots",
   });
 }
 
 export function criarTabelaMusicas(musicas) {
+  const colors = getThemedColors();
+
   const table = new Table({
     head: [
-      chalk.hex(COLORS.accent).bold("#"),
-      chalk.hex(COLORS.accent).bold("TITLE"),
-      chalk.hex(COLORS.accent).bold("PRODUCER"),
-      chalk.hex(COLORS.accent).bold("VOCALOID"),
-      chalk.hex(COLORS.accent).bold("RATING"),
+      chalk.hex(colors.accent).bold("#"),
+      chalk.hex(colors.accent).bold("TITLE"),
+      chalk.hex(colors.accent).bold("PRODUCER"),
+      chalk.hex(colors.accent).bold("VOCALOID"),
+      chalk.hex(colors.accent).bold("RATING"),
     ],
     style: {
       head: [],
@@ -87,11 +115,11 @@ export function criarTabelaMusicas(musicas) {
 
   musicas.forEach((musica, index) => {
     table.push([
-      chalk.hex(COLORS.muted)((index + 1).toString()),
+      chalk.hex(colors.muted)((index + 1).toString()),
       chalk.white(truncate(musica.titulo, 28)),
-      chalk.hex(COLORS.secondary)(truncate(musica.produtor, 18)),
-      chalk.hex(COLORS.primary)(truncate(musica.vocaloid, 13)),
-      chalk.hex(COLORS.accent)(musica.rating.toString()),
+      chalk.hex(colors.secondary)(truncate(musica.produtor, 18)),
+      chalk.hex(colors.primary)(truncate(musica.vocaloid, 13)),
+      chalk.hex(colors.accent)(musica.rating.toString()),
     ]);
   });
 
@@ -103,4 +131,5 @@ function truncate(str, len) {
   return str.length > len ? str.substring(0, len - 1) + "…" : str;
 }
 
-export { COLORS };
+// Re-exporta themeManager para uso externo
+export { themeManager, themed };

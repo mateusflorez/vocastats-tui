@@ -4,7 +4,58 @@ import chalk from "chalk";
 import { select, input } from "@inquirer/prompts";
 import { exec } from "child_process";
 import { platform } from "os";
-import { exibirHeader, criarSpinner, criarTabelaMusicas, COLORS } from "./src/ui.js";
+import { parseArgs } from "util";
+import { exibirHeader, criarSpinner, criarTabelaMusicas, COLORS, themeManager } from "./src/ui.js";
+
+// Processa argumentos da CLI
+const { values: cliArgs } = parseArgs({
+  options: {
+    theme: { type: "string", short: "t" },
+    help: { type: "boolean", short: "h" },
+    "list-themes": { type: "boolean" },
+  },
+  strict: false,
+});
+
+// Mostra ajuda
+if (cliArgs.help) {
+  console.log(`
+  ${chalk.hex("#39C5BB")("VocaStats")} - Real-time Vocaloid rankings
+
+  ${chalk.bold("Usage:")}
+    vocastats [options]
+
+  ${chalk.bold("Options:")}
+    -t, --theme <name>   Set color theme (miku, rin, luka, kaito, meiko, gumi, teto, dark, cyberpunk, monochrome)
+    --list-themes        List available themes
+    -h, --help           Show this help message
+
+  ${chalk.bold("Examples:")}
+    vocastats --theme=cyberpunk
+    vocastats -t rin
+`);
+  process.exit(0);
+}
+
+// Lista temas disponiveis
+if (cliArgs["list-themes"]) {
+  console.log(`\n  ${chalk.bold("Available themes:")}\n`);
+  themeManager.listThemes().forEach(t => {
+    const marker = t.isCurrent ? chalk.green(" (current)") : "";
+    console.log(`    ${chalk.hex("#39C5BB")(t.key.padEnd(12))} ${t.description}${marker}`);
+  });
+  console.log();
+  process.exit(0);
+}
+
+// Aplica tema da CLI se especificado
+if (cliArgs.theme) {
+  if (!themeManager.setTheme(cliArgs.theme)) {
+    console.error(chalk.red(`  Unknown theme: ${cliArgs.theme}`));
+    console.log(chalk.gray("  Use --list-themes to see available themes\n"));
+    process.exit(1);
+  }
+}
 import {
   getTopRated,
   getSongsByArtist,
@@ -71,6 +122,11 @@ const MAIN_MENU = [
     name: chalk.hex("#F39C12")("  Discovery Mode"),
     value: "discovery",
     description: "Random highly-rated songs",
+  },
+  {
+    name: chalk.hex("#9B9B9B")("  Settings"),
+    value: "settings",
+    description: "Change theme and preferences",
   },
   {
     name: chalk.red("  Exit"),
@@ -520,6 +576,66 @@ async function discoveryMode() {
   }
 }
 
+/**
+ * Menu de configuracoes
+ */
+async function showSettings() {
+  const choices = [
+    {
+      name: chalk.hex(COLORS.primary)("  Change theme"),
+      value: "theme",
+      description: "Customize the color scheme",
+    },
+    {
+      name: chalk.gray("  Back"),
+      value: null,
+    },
+  ];
+
+  const action = await select({
+    message: chalk.hex("#9B9B9B")("Settings:"),
+    choices,
+  });
+
+  if (action === "theme") {
+    await changeTheme();
+  }
+}
+
+/**
+ * Menu para trocar o tema
+ */
+async function changeTheme() {
+  const themeList = themeManager.listThemes();
+
+  const choices = themeList.map(t => ({
+    name: t.isCurrent
+      ? chalk.hex(COLORS.primary)(`  ${t.name} ✓`)
+      : chalk.white(`  ${t.name}`),
+    value: t.key,
+    description: t.description,
+  }));
+
+  choices.push({
+    name: chalk.gray("  Cancel"),
+    value: null,
+  });
+
+  const selected = await select({
+    message: chalk.hex(COLORS.primary)("Select theme:"),
+    choices,
+  });
+
+  if (selected) {
+    themeManager.setTheme(selected);
+    exibirHeader();
+    console.log(chalk.hex(COLORS.primary)(`\n  Theme changed to ${selected}!\n`));
+
+    // Pequena pausa para o usuario ver a mudanca
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+}
+
 async function main() {
   let running = true;
 
@@ -560,6 +676,10 @@ async function main() {
 
         case "discovery":
           await discoveryMode();
+          break;
+
+        case "settings":
+          await showSettings();
           break;
       }
     } catch (error) {

@@ -2,6 +2,7 @@ import chalk from "chalk";
 import Table from "cli-table3";
 import ora from "ora";
 import { themeManager, themed, getThemedColors } from "./themes.js";
+import { navigation } from "./navigation.js";
 
 /**
  * Obtem COLORS do tema atual
@@ -52,7 +53,30 @@ function criarLogo() {
 `;
 }
 
-export function exibirHeader() {
+/**
+ * Renderiza breadcrumbs de navegacao
+ */
+export function renderBreadcrumbs() {
+  const colors = getThemedColors();
+  const crumbs = navigation.getBreadcrumbs();
+
+  if (crumbs.length <= 1) {
+    return ""; // Nao mostra breadcrumbs na home
+  }
+
+  const separator = chalk.hex(colors.muted)(" > ");
+  const formatted = crumbs.map((crumb, i) => {
+    if (i === crumbs.length - 1) {
+      // Ultimo item (atual) - destacado
+      return chalk.hex(colors.primary)(crumb);
+    }
+    return chalk.hex(colors.muted)(crumb);
+  }).join(separator);
+
+  return `  ${formatted}\n`;
+}
+
+export function exibirHeader(showBreadcrumbs = true) {
   const colors = getThemedColors();
   console.clear();
   console.log(criarLogo());
@@ -63,7 +87,18 @@ export function exibirHeader() {
     chalk.gray("  |  Real-time Vocaloid rankings")
   );
   console.log(chalk.gray("─".repeat(55)));
-  console.log();
+
+  if (showBreadcrumbs) {
+    const breadcrumbs = renderBreadcrumbs();
+    if (breadcrumbs) {
+      console.log();
+      console.log(breadcrumbs);
+    } else {
+      console.log();
+    }
+  } else {
+    console.log();
+  }
 }
 
 export function criarSpinner(texto) {
@@ -131,5 +166,5 @@ function truncate(str, len) {
   return str.length > len ? str.substring(0, len - 1) + "…" : str;
 }
 
-// Re-exporta themeManager para uso externo
-export { themeManager, themed };
+// Re-exporta para uso externo
+export { themeManager, themed, navigation };

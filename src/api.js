@@ -11,17 +11,18 @@ const DEFAULT_PAGE_SIZE = 20;
 
 /**
  * IDs dos Vocaloids mais populares no VocaDB
+ * IDs verificados em: https://vocadb.net/api/artists/{id}
  */
 export const VOCALOIDS = {
   "Hatsune Miku": 1,
-  "Kagamine Rin": 2,
-  "Kagamine Len": 3,
-  "Megurine Luka": 4,
-  "KAITO": 5,
-  "MEIKO": 6,
+  "Kagamine Rin": 14,
+  "Kagamine Len": 15,
+  "Megurine Luka": 2,
+  "KAITO": 71,
+  "MEIKO": 176,
   "GUMI": 3,
-  "IA": 127,
-  "Kasane Teto": 17,
+  "IA": 504,
+  "Kasane Teto": 116,
   "Kaai Yuki": 191,
 };
 
@@ -104,7 +105,6 @@ export async function getSongsByArtist(artistId, options = {}) {
   if (cached) return cached;
 
   const params = new URLSearchParams({
-    artistId: artistId.toString(),
     sort,
     languagePreference: "Romaji",
     fields: "Artists,ThumbUrl,PVs",
@@ -114,7 +114,9 @@ export async function getSongsByArtist(artistId, options = {}) {
     onlyWithPvs: "true",
   });
 
-  const response = await fetch(`${BASE_URL}/songs?${params}`);
+  // artistId precisa estar no formato de array para a API do VocaDB
+  const url = `${BASE_URL}/songs?artistId[]=${artistId}&${params}`;
+  const response = await fetch(url);
 
   if (!response.ok) {
     throw new Error(`VocaDB API error: ${response.status}`);
@@ -200,7 +202,6 @@ export async function getSongsByTag(tagId, options = {}) {
   if (cached) return cached;
 
   const params = new URLSearchParams({
-    tagId: tagId.toString(),
     sort,
     languagePreference: "Romaji",
     fields: "Artists,ThumbUrl,PVs",
@@ -210,7 +211,9 @@ export async function getSongsByTag(tagId, options = {}) {
     onlyWithPvs: "true",
   });
 
-  const response = await fetch(`${BASE_URL}/songs?${params}`);
+  // tagId precisa estar no formato de array para a API do VocaDB
+  const url = `${BASE_URL}/songs?tagId[]=${tagId}&${params}`;
+  const response = await fetch(url);
 
   if (!response.ok) {
     throw new Error(`VocaDB API error: ${response.status}`);

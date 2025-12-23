@@ -5,7 +5,7 @@ import { select, input } from "@inquirer/prompts";
 import { exec } from "child_process";
 import { platform } from "os";
 import { parseArgs } from "util";
-import { exibirHeader, criarSpinner, criarTabelaMusicas, COLORS, themeManager } from "./src/ui.js";
+import { exibirHeader, criarSpinner, criarTabelaMusicas, COLORS, themeManager, navigation } from "./src/ui.js";
 
 // Processa argumentos da CLI
 const { values: cliArgs } = parseArgs({
@@ -176,13 +176,14 @@ async function showSongsWithPagination(fetchFn, fetchOptions, title, color) {
     let currentStart = fetchOptions.start || 0;
     const limit = fetchOptions.limit || 20;
 
-    let navigation = "previous-menu";
-    while (navigation === "previous-menu") {
-      console.log(chalk.hex(color)(`\n  ${title} (${allSongs.length}/${data.totalCount}):\n`));
+    let nav = "previous-menu";
+    while (nav === "previous-menu") {
+      exibirHeader();
+      console.log(chalk.hex(color)(`  ${title} (${allSongs.length}/${data.totalCount}):\n`));
       const table = criarTabelaMusicas(allSongs);
       console.log(table.toString());
 
-      navigation = await openLinkMenuWithPagination(allSongs, data.hasMore, async () => {
+      nav = await openLinkMenuWithPagination(allSongs, data.hasMore, async () => {
         const loadMoreSpinner = criarSpinner("Loading more...");
         loadMoreSpinner.start();
 
@@ -422,15 +423,19 @@ async function openLinkMenu(songs) {
 }
 
 async function showTopWeek() {
+  navigation.push("Top of the Week");
   await showSongsWithPagination(
     getTopRated,
     { hours: 168, limit: 20 },
     "Top of the week",
     COLORS.primary
   );
+  navigation.pop();
 }
 
 async function menuByVocaloid() {
+  navigation.push("By Vocaloid");
+
   const options = Object.entries(VOCALOIDS).map(([name, id]) => ({
     name: chalk.hex(COLORS.primary)(`  ${name}`),
     value: { id, name },
@@ -442,22 +447,31 @@ async function menuByVocaloid() {
     value: null,
   });
 
+  exibirHeader();
   const vocaloid = await select({
     message: chalk.hex(COLORS.primary)("Select Vocaloid:"),
     choices: options,
   });
 
-  if (!vocaloid) return;
+  if (!vocaloid) {
+    navigation.pop();
+    return;
+  }
 
+  navigation.push(vocaloid.name);
   await showSongsWithPagination(
     (opts) => getSongsByArtist(vocaloid.id, opts),
     { limit: 20 },
     `Songs by ${vocaloid.name}`,
     COLORS.secondary
   );
+  navigation.pop();
+  navigation.pop();
 }
 
 async function menuByGenre() {
+  navigation.push("By Genre");
+
   const options = Object.entries(GENRES).map(([name, id]) => ({
     name: chalk.hex("#88D498")(`  ${name}`),
     value: { id, name },
@@ -469,36 +483,52 @@ async function menuByGenre() {
     value: null,
   });
 
+  exibirHeader();
   const genre = await select({
     message: chalk.hex("#88D498")("Select Genre:"),
     choices: options,
   });
 
-  if (!genre) return;
+  if (!genre) {
+    navigation.pop();
+    return;
+  }
 
+  navigation.push(genre.name);
   await showSongsWithPagination(
     (opts) => getSongsByTag(genre.id, opts),
     { limit: 20 },
     `${genre.name} songs`,
     "#88D498"
   );
+  navigation.pop();
+  navigation.pop();
 }
 
 async function searchSongMenu() {
+  navigation.push("Search Song");
+  exibirHeader();
+
   const term = await input({
     message: chalk.hex(COLORS.accent)("Song name:"),
     validate: (value) => value.length >= 2 || "Enter at least 2 characters",
   });
 
+  navigation.push(`"${term}"`);
   await showSongsWithPagination(
     (opts) => searchSongs(term, opts),
     { limit: 20 },
     `Results for "${term}"`,
     COLORS.accent
   );
+  navigation.pop();
+  navigation.pop();
 }
 
 async function searchProducerMenu() {
+  navigation.push("Search Producer");
+  exibirHeader();
+
   const term = await input({
     message: chalk.hex("#9B59B6")("Producer name:"),
     validate: (value) => value.length >= 2 || "Enter at least 2 characters",
@@ -513,8 +543,11 @@ async function searchProducerMenu() {
 
     if (artistData.items.length === 0) {
       console.log(chalk.yellow(`\n  No producer found for "${term}"\n`));
+      navigation.pop();
       return;
     }
+
+    navigation.push(`"${term}"`);
 
     const options = artistData.items.map((artist) => ({
       name: chalk.hex("#9B59B6")(`  ${artist.name}`),
@@ -527,27 +560,39 @@ async function searchProducerMenu() {
       value: null,
     });
 
+    exibirHeader();
     const producer = await select({
       message: chalk.hex("#9B59B6")("Select producer:"),
       choices: options,
     });
 
-    if (!producer) return;
+    if (!producer) {
+      navigation.pop();
+      navigation.pop();
+      return;
+    }
 
+    navigation.push(producer.name);
     await showSongsWithPagination(
       (opts) => getSongsByArtist(producer.id, opts),
       { limit: 20 },
       `Songs by ${producer.name}`,
       "#9B59B6"
     );
+    navigation.pop();
+    navigation.pop();
+    navigation.pop();
 
   } catch (error) {
     spinner.fail(chalk.red("Error fetching data"));
     console.log(chalk.red(`  ${error.message}`));
+    navigation.pop();
   }
 }
 
 async function discoveryMode() {
+  navigation.push("Discovery Mode");
+
   const spinner = criarSpinner("Discovering random songs...");
   spinner.start();
 
@@ -559,20 +604,27 @@ async function discoveryMode() {
       ([, id]) => id === data.vocaloidId
     )?.[0] || "Vocaloid";
 
+    navigation.push(vocaloidName);
+
     const formattedSongs = data.items.map(formatSong);
 
-    let navigation = "previous-menu";
-    while (navigation === "previous-menu") {
-      console.log(chalk.hex("#F39C12")(`\n  Discoveries from ${vocaloidName}:\n`));
+    let nav = "previous-menu";
+    while (nav === "previous-menu") {
+      exibirHeader();
+      console.log(chalk.hex("#F39C12")(`  Discoveries from ${vocaloidName}:\n`));
       const table = criarTabelaMusicas(formattedSongs);
       console.log(table.toString());
 
-      navigation = await openLinkMenu(formattedSongs);
+      nav = await openLinkMenu(formattedSongs);
     }
+
+    navigation.pop();
+    navigation.pop();
 
   } catch (error) {
     spinner.fail(chalk.red("Error fetching data"));
     console.log(chalk.red(`  ${error.message}`));
+    navigation.pop();
   }
 }
 
@@ -580,6 +632,8 @@ async function discoveryMode() {
  * Menu de configuracoes
  */
 async function showSettings() {
+  navigation.push("Settings");
+
   const choices = [
     {
       name: chalk.hex(COLORS.primary)("  Change theme"),
@@ -592,6 +646,7 @@ async function showSettings() {
     },
   ];
 
+  exibirHeader();
   const action = await select({
     message: chalk.hex("#9B9B9B")("Settings:"),
     choices,
@@ -600,12 +655,16 @@ async function showSettings() {
   if (action === "theme") {
     await changeTheme();
   }
+
+  navigation.pop();
 }
 
 /**
  * Menu para trocar o tema
  */
 async function changeTheme() {
+  navigation.push("Change Theme");
+
   const themeList = themeManager.listThemes();
 
   const choices = themeList.map(t => ({
@@ -621,6 +680,7 @@ async function changeTheme() {
     value: null,
   });
 
+  exibirHeader();
   const selected = await select({
     message: chalk.hex(COLORS.primary)("Select theme:"),
     choices,
@@ -634,13 +694,19 @@ async function changeTheme() {
     // Pequena pausa para o usuario ver a mudanca
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
+
+  navigation.pop();
 }
 
 async function main() {
   let running = true;
 
   while (running) {
-    exibirHeader();
+    // Limpa navegacao e inicia em Home
+    navigation.clear();
+    navigation.push("Home");
+
+    exibirHeader(false); // Nao mostra breadcrumbs na Home
 
     try {
       const option = await select({

@@ -7,6 +7,7 @@ import * as cache from "./cache.js";
 
 const BASE_URL = "https://vocadb.net/api";
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+const DEFAULT_PAGE_SIZE = 20;
 
 /**
  * IDs dos Vocaloids mais populares no VocaDB
@@ -46,46 +47,70 @@ export const GENRES = {
 };
 
 /**
- * Busca musicas mais bem avaliadas (com cache)
+ * Busca musicas mais bem avaliadas (com cache e paginacao)
+ * Nota: O endpoint top-rated nao suporta paginacao nativa,
+ * entao buscamos mais resultados e fazemos paginacao local
  */
 export async function getTopRated(options = {}) {
-  const cacheKey = `top-rated:${options.hours || 168}:${options.limit || 25}`;
-  const cached = cache.get(cacheKey);
-  if (cached) return cached;
+  const start = options.start || 0;
+  const limit = options.limit || DEFAULT_PAGE_SIZE;
+  const hours = options.hours || 168;
 
-  const params = new URLSearchParams({
-    durationHours: options.hours || 168, // 7 dias
-    filterBy: "PublishDate",
-    languagePreference: "Romaji",
-    fields: "Artists,ThumbUrl,PVs",
-    maxResults: options.limit || 25,
-  });
+  // Para paginacao, buscamos um lote maior e fazemos slice
+  const fetchLimit = Math.max(100, start + limit);
+  const cacheKey = `top-rated:${hours}:${fetchLimit}`;
 
-  const response = await fetch(`${BASE_URL}/songs/top-rated?${params}`);
+  let allData = cache.get(cacheKey);
 
-  if (!response.ok) {
-    throw new Error(`VocaDB API error: ${response.status}`);
+  if (!allData) {
+    const params = new URLSearchParams({
+      durationHours: hours.toString(),
+      filterBy: "PublishDate",
+      languagePreference: "Romaji",
+      fields: "Artists,ThumbUrl,PVs",
+      maxResults: fetchLimit.toString(),
+    });
+
+    const response = await fetch(`${BASE_URL}/songs/top-rated?${params}`);
+
+    if (!response.ok) {
+      throw new Error(`VocaDB API error: ${response.status}`);
+    }
+
+    allData = await response.json();
+    cache.set(cacheKey, allData, CACHE_TTL);
   }
 
-  const data = await response.json();
-  cache.set(cacheKey, data, CACHE_TTL);
-  return data;
+  // Paginacao local
+  const items = allData.slice(start, start + limit);
+
+  return {
+    items,
+    totalCount: allData.length,
+    hasMore: (start + limit) < allData.length,
+  };
 }
 
 /**
- * Busca musicas por artista/vocaloid (com cache)
+ * Busca musicas por artista/vocaloid (com cache e paginacao)
  */
 export async function getSongsByArtist(artistId, options = {}) {
-  const cacheKey = `artist:${artistId}:${options.sort || "RatingScore"}:${options.limit || 25}`;
+  const start = options.start || 0;
+  const limit = options.limit || DEFAULT_PAGE_SIZE;
+  const sort = options.sort || "RatingScore";
+
+  const cacheKey = `artist:${artistId}:${sort}:${start}:${limit}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
   const params = new URLSearchParams({
     artistId: artistId.toString(),
-    sort: options.sort || "RatingScore",
+    sort,
     languagePreference: "Romaji",
     fields: "Artists,ThumbUrl,PVs",
-    maxResults: options.limit || 25,
+    start: start.toString(),
+    maxResults: limit.toString(),
+    getTotalCount: "true",
     onlyWithPvs: "true",
   });
 
@@ -96,20 +121,33 @@ export async function getSongsByArtist(artistId, options = {}) {
   }
 
   const data = await response.json();
-  cache.set(cacheKey, data, CACHE_TTL);
-  return data;
+
+  const result = {
+    items: data.items || [],
+    totalCount: data.totalCount || data.items?.length || 0,
+    hasMore: (start + limit) < (data.totalCount || 0),
+  };
+
+  cache.set(cacheKey, result, CACHE_TTL);
+  return result;
 }
 
 /**
- * Busca musicas por texto (nome da musica)
+ * Busca musicas por texto (nome da musica) com paginacao
  */
 export async function searchSongs(query, options = {}) {
+  const start = options.start || 0;
+  const limit = options.limit || DEFAULT_PAGE_SIZE;
+  const sort = options.sort || "RatingScore";
+
   const params = new URLSearchParams({
     query,
-    sort: options.sort || "RatingScore",
+    sort,
     languagePreference: "Romaji",
     fields: "Artists,ThumbUrl,PVs",
-    maxResults: options.limit || 25,
+    start: start.toString(),
+    maxResults: limit.toString(),
+    getTotalCount: "true",
     onlyWithPvs: "true",
   });
 
@@ -119,7 +157,13 @@ export async function searchSongs(query, options = {}) {
     throw new Error(`VocaDB API error: ${response.status}`);
   }
 
-  return response.json();
+  const data = await response.json();
+
+  return {
+    items: data.items || [],
+    totalCount: data.totalCount || data.items?.length || 0,
+    hasMore: (start + limit) < (data.totalCount || 0),
+  };
 }
 
 /**
@@ -144,19 +188,25 @@ export async function searchArtists(query, options = {}) {
 }
 
 /**
- * Busca musicas por tag/genero (com cache)
+ * Busca musicas por tag/genero (com cache e paginacao)
  */
 export async function getSongsByTag(tagId, options = {}) {
-  const cacheKey = `tag:${tagId}:${options.sort || "RatingScore"}:${options.limit || 25}`;
+  const start = options.start || 0;
+  const limit = options.limit || DEFAULT_PAGE_SIZE;
+  const sort = options.sort || "RatingScore";
+
+  const cacheKey = `tag:${tagId}:${sort}:${start}:${limit}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
   const params = new URLSearchParams({
     tagId: tagId.toString(),
-    sort: options.sort || "RatingScore",
+    sort,
     languagePreference: "Romaji",
     fields: "Artists,ThumbUrl,PVs",
-    maxResults: options.limit || 25,
+    start: start.toString(),
+    maxResults: limit.toString(),
+    getTotalCount: "true",
     onlyWithPvs: "true",
   });
 
@@ -167,8 +217,15 @@ export async function getSongsByTag(tagId, options = {}) {
   }
 
   const data = await response.json();
-  cache.set(cacheKey, data, CACHE_TTL);
-  return data;
+
+  const result = {
+    items: data.items || [],
+    totalCount: data.totalCount || data.items?.length || 0,
+    hasMore: (start + limit) < (data.totalCount || 0),
+  };
+
+  cache.set(cacheKey, result, CACHE_TTL);
+  return result;
 }
 
 /**

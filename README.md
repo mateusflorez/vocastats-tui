@@ -1,5 +1,9 @@
 # VocaStats
 
+[![npm version](https://img.shields.io/npm/v/vocastats-tui.svg)](https://www.npmjs.com/package/vocastats-tui)
+[![GitHub](https://img.shields.io/github/stars/mateusflorez/vocastats-tui?style=social)](https://github.com/mateusflorez/vocastats-tui)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 TUI for tracking Vocaloid song rankings and statistics in real-time.
 
 ```

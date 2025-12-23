@@ -97,6 +97,61 @@ function formatSong(song) {
 }
 
 /**
+ * Exibe lista de musicas com suporte a paginacao
+ * @param {Function} fetchFn - Funcao que busca dados da API
+ * @param {Object} fetchOptions - Opcoes para a funcao de busca
+ * @param {string} title - Titulo da secao
+ * @param {string} color - Cor hex para o titulo
+ */
+async function showSongsWithPagination(fetchFn, fetchOptions, title, color) {
+  const spinner = criarSpinner("Fetching songs...");
+  spinner.start();
+
+  try {
+    let data = await fetchFn(fetchOptions);
+    spinner.stop();
+
+    if (data.items.length === 0) {
+      console.log(chalk.yellow(`\n  No songs found.\n`));
+      return;
+    }
+
+    let allSongs = data.items.map(formatSong);
+    let currentStart = fetchOptions.start || 0;
+    const limit = fetchOptions.limit || 20;
+
+    let navigation = "previous-menu";
+    while (navigation === "previous-menu") {
+      console.log(chalk.hex(color)(`\n  ${title} (${allSongs.length}/${data.totalCount}):\n`));
+      const table = criarTabelaMusicas(allSongs);
+      console.log(table.toString());
+
+      navigation = await openLinkMenuWithPagination(allSongs, data.hasMore, async () => {
+        const loadMoreSpinner = criarSpinner("Loading more...");
+        loadMoreSpinner.start();
+
+        currentStart += limit;
+        const moreData = await fetchFn({ ...fetchOptions, start: currentStart });
+        loadMoreSpinner.stop();
+
+        // Adiciona novas musicas a lista
+        const newSongs = moreData.items.map(formatSong);
+        allSongs = [...allSongs, ...newSongs];
+        data = {
+          ...moreData,
+          items: [...data.items, ...moreData.items],
+        };
+
+        return moreData.hasMore;
+      });
+    }
+  } catch (error) {
+    spinner.fail(chalk.red("Error fetching data"));
+    console.log(chalk.red(`  ${error.message}`));
+  }
+}
+
+/**
  * Post-action menu: choose where to navigate after opening a link
  * @returns {'previous-menu' | 'home'}
  */
@@ -117,6 +172,112 @@ async function postActionMenu() {
     ],
   });
   return choice;
+}
+
+/**
+ * Menu to select and open a song link (with pagination support)
+ * @param {Array} songs - Lista de musicas formatadas
+ * @param {boolean} hasMore - Se ha mais resultados para carregar
+ * @param {Function} loadMoreFn - Funcao para carregar mais resultados
+ * @returns {'previous-menu' | 'home' | null} - navigation action
+ */
+async function openLinkMenuWithPagination(songs, hasMore, loadMoreFn) {
+  const spotifyInstalled = isSpotifyInstalled();
+  const spotifyLabel = spotifyInstalled
+    ? "  Search on Spotify (app)"
+    : "  Search on Spotify (web)";
+
+  const options = [];
+
+  // Opcao de carregar mais (se houver)
+  if (hasMore) {
+    options.push({
+      name: chalk.hex(COLORS.primary)("  Load more..."),
+      value: { type: "load-more" },
+      description: "Fetch more results",
+    });
+  }
+
+  options.push({
+    name: chalk.hex("#1DB954")(spotifyLabel),
+    value: { type: "spotify" },
+    description: spotifyInstalled ? "Opens directly in app" : "Opens in browser",
+  });
+
+  songs.forEach((s, i) => {
+    options.push({
+      name: chalk.hex(COLORS.accent)(`  ${i + 1}. ${s.titulo}`),
+      value: { type: "song", song: s },
+      description: s.produtor,
+    });
+  });
+
+  options.push({
+    name: chalk.gray("  Back"),
+    value: null,
+  });
+
+  const choice = await select({
+    message: chalk.hex(COLORS.accent)("Select an option:"),
+    choices: options,
+    pageSize: 15,
+  });
+
+  if (!choice) return null;
+
+  // Load more
+  if (choice.type === "load-more") {
+    const stillHasMore = await loadMoreFn();
+    // Retorna previous-menu para re-renderizar a lista com os novos itens
+    return "previous-menu";
+  }
+
+  let openedLink = false;
+
+  if (choice.type === "spotify") {
+    const songOptions = songs.map((s, i) => ({
+      name: chalk.hex("#1DB954")(`  ${i + 1}. ${s.titulo}`),
+      value: s,
+      description: s.produtor,
+    }));
+
+    songOptions.push({
+      name: chalk.gray("  Cancel"),
+      value: null,
+    });
+
+    const selectedSong = await select({
+      message: chalk.hex("#1DB954")("Which song to search on Spotify?"),
+      choices: songOptions,
+      pageSize: 15,
+    });
+
+    if (selectedSong) {
+      const query = `${selectedSong.titulo} ${selectedSong.produtor}`;
+      const result = searchOnSpotify(query);
+      if (result.type === "app") {
+        console.log(chalk.hex("#1DB954")(`\n  Opening in Spotify...\n`));
+      } else {
+        console.log(chalk.hex("#1DB954")(`\n  Opening in browser...\n`));
+      }
+      openedLink = true;
+    }
+  } else if (choice.type === "song") {
+    const song = choice.song;
+    if (song.url) {
+      console.log(chalk.hex(COLORS.primary)(`\n  Opening ${song.url}...\n`));
+      openUrl(song.url);
+      openedLink = true;
+    } else {
+      console.log(chalk.yellow("\n  This song has no available link.\n"));
+    }
+  }
+
+  if (openedLink) {
+    return await postActionMenu();
+  }
+
+  return null;
 }
 
 /**
@@ -205,34 +366,18 @@ async function openLinkMenu(songs) {
 }
 
 async function showTopWeek() {
-  const spinner = criarSpinner("Fetching top of the week...");
-  spinner.start();
-
-  try {
-    const songs = await getTopRated({ hours: 168, limit: 20 });
-    spinner.stop();
-
-    const formattedSongs = songs.map(formatSong);
-
-    let navigation = "previous-menu";
-    while (navigation === "previous-menu") {
-      console.log(chalk.hex(COLORS.primary)(`\n  Top ${formattedSongs.length} of the week:\n`));
-      const table = criarTabelaMusicas(formattedSongs);
-      console.log(table.toString());
-
-      navigation = await openLinkMenu(formattedSongs);
-    }
-
-  } catch (error) {
-    spinner.fail(chalk.red("Error fetching data"));
-    console.log(chalk.red(`  ${error.message}`));
-  }
+  await showSongsWithPagination(
+    getTopRated,
+    { hours: 168, limit: 20 },
+    "Top of the week",
+    COLORS.primary
+  );
 }
 
 async function menuByVocaloid() {
   const options = Object.entries(VOCALOIDS).map(([name, id]) => ({
     name: chalk.hex(COLORS.primary)(`  ${name}`),
-    value: id,
+    value: { id, name },
     description: `View songs by ${name}`,
   }));
 
@@ -241,41 +386,25 @@ async function menuByVocaloid() {
     value: null,
   });
 
-  const vocaloidId = await select({
+  const vocaloid = await select({
     message: chalk.hex(COLORS.primary)("Select Vocaloid:"),
     choices: options,
   });
 
-  if (!vocaloidId) return;
+  if (!vocaloid) return;
 
-  const spinner = criarSpinner("Fetching songs...");
-  spinner.start();
-
-  try {
-    const data = await getSongsByArtist(vocaloidId, { limit: 20 });
-    spinner.stop();
-
-    const formattedSongs = data.items.map(formatSong);
-
-    let navigation = "previous-menu";
-    while (navigation === "previous-menu") {
-      console.log(chalk.hex(COLORS.primary)(`\n  Found ${formattedSongs.length} songs:\n`));
-      const table = criarTabelaMusicas(formattedSongs);
-      console.log(table.toString());
-
-      navigation = await openLinkMenu(formattedSongs);
-    }
-
-  } catch (error) {
-    spinner.fail(chalk.red("Error fetching data"));
-    console.log(chalk.red(`  ${error.message}`));
-  }
+  await showSongsWithPagination(
+    (opts) => getSongsByArtist(vocaloid.id, opts),
+    { limit: 20 },
+    `Songs by ${vocaloid.name}`,
+    COLORS.secondary
+  );
 }
 
 async function menuByGenre() {
   const options = Object.entries(GENRES).map(([name, id]) => ({
     name: chalk.hex("#88D498")(`  ${name}`),
-    value: id,
+    value: { id, name },
     description: `View ${name} songs`,
   }));
 
@@ -284,35 +413,19 @@ async function menuByGenre() {
     value: null,
   });
 
-  const genreId = await select({
+  const genre = await select({
     message: chalk.hex("#88D498")("Select Genre:"),
     choices: options,
   });
 
-  if (!genreId) return;
+  if (!genre) return;
 
-  const spinner = criarSpinner("Fetching songs...");
-  spinner.start();
-
-  try {
-    const data = await getSongsByTag(genreId, { limit: 20 });
-    spinner.stop();
-
-    const formattedSongs = data.items.map(formatSong);
-
-    let navigation = "previous-menu";
-    while (navigation === "previous-menu") {
-      console.log(chalk.hex("#88D498")(`\n  Found ${formattedSongs.length} songs:\n`));
-      const table = criarTabelaMusicas(formattedSongs);
-      console.log(table.toString());
-
-      navigation = await openLinkMenu(formattedSongs);
-    }
-
-  } catch (error) {
-    spinner.fail(chalk.red("Error fetching data"));
-    console.log(chalk.red(`  ${error.message}`));
-  }
+  await showSongsWithPagination(
+    (opts) => getSongsByTag(genre.id, opts),
+    { limit: 20 },
+    `${genre.name} songs`,
+    "#88D498"
+  );
 }
 
 async function searchSongMenu() {
@@ -321,33 +434,12 @@ async function searchSongMenu() {
     validate: (value) => value.length >= 2 || "Enter at least 2 characters",
   });
 
-  const spinner = criarSpinner(`Searching "${term}"...`);
-  spinner.start();
-
-  try {
-    const data = await searchSongs(term, { limit: 20 });
-    spinner.stop();
-
-    if (data.items.length === 0) {
-      console.log(chalk.yellow(`\n  No songs found for "${term}"\n`));
-      return;
-    }
-
-    const formattedSongs = data.items.map(formatSong);
-
-    let navigation = "previous-menu";
-    while (navigation === "previous-menu") {
-      console.log(chalk.hex(COLORS.accent)(`\n  Found ${formattedSongs.length} songs:\n`));
-      const table = criarTabelaMusicas(formattedSongs);
-      console.log(table.toString());
-
-      navigation = await openLinkMenu(formattedSongs);
-    }
-
-  } catch (error) {
-    spinner.fail(chalk.red("Error fetching data"));
-    console.log(chalk.red(`  ${error.message}`));
-  }
+  await showSongsWithPagination(
+    (opts) => searchSongs(term, opts),
+    { limit: 20 },
+    `Results for "${term}"`,
+    COLORS.accent
+  );
 }
 
 async function searchProducerMenu() {
@@ -370,7 +462,7 @@ async function searchProducerMenu() {
 
     const options = artistData.items.map((artist) => ({
       name: chalk.hex("#9B59B6")(`  ${artist.name}`),
-      value: artist.id,
+      value: { id: artist.id, name: artist.name },
       description: artist.additionalNames || "",
     }));
 
@@ -379,29 +471,19 @@ async function searchProducerMenu() {
       value: null,
     });
 
-    const producerId = await select({
+    const producer = await select({
       message: chalk.hex("#9B59B6")("Select producer:"),
       choices: options,
     });
 
-    if (!producerId) return;
+    if (!producer) return;
 
-    const spinner2 = criarSpinner("Fetching producer's songs...");
-    spinner2.start();
-
-    const data = await getSongsByArtist(producerId, { limit: 20 });
-    spinner2.stop();
-
-    const formattedSongs = data.items.map(formatSong);
-
-    let navigation = "previous-menu";
-    while (navigation === "previous-menu") {
-      console.log(chalk.hex("#9B59B6")(`\n  Found ${formattedSongs.length} songs:\n`));
-      const table = criarTabelaMusicas(formattedSongs);
-      console.log(table.toString());
-
-      navigation = await openLinkMenu(formattedSongs);
-    }
+    await showSongsWithPagination(
+      (opts) => getSongsByArtist(producer.id, opts),
+      { limit: 20 },
+      `Songs by ${producer.name}`,
+      "#9B59B6"
+    );
 
   } catch (error) {
     spinner.fail(chalk.red("Error fetching data"));
